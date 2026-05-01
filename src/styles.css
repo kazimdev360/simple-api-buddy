@@ -160,3 +160,23 @@
     color: var(--color-foreground);
   }
 }
+
+@layer utilities {
+  .bg-gradient-primary { background-image: var(--gradient-primary); }
+  .bg-gradient-subtle { background-image: var(--gradient-subtle); }
+  .shadow-glow { box-shadow: var(--shadow-glow); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .transition-smooth { transition: var(--transition-smooth); }
+  .text-gradient {
+    background-image: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 40%, transparent); }
+  50% { box-shadow: 0 0 0 8px color-mix(in oklab, var(--primary) 0%, transparent); }
+}
+.animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
