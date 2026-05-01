@@ -90,11 +90,27 @@ function Index() {
       }
     }
 
+    const finalHeaders: Record<string, string> = {};
+    for (const h of headers) {
+      const k = h.key.trim();
+      const v = h.value.trim();
+      if (!k) continue;
+      if (!/^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$/.test(k)) {
+        setError(`Invalid header name: "${k}"`);
+        toast.error("Invalid header name");
+        return;
+      }
+      finalHeaders[k] = v;
+    }
+    if (parsedBody && !Object.keys(finalHeaders).some((k) => k.toLowerCase() === "content-type")) {
+      finalHeaders["Content-Type"] = "application/json";
+    }
+
     setLoading(true);
     try {
       const res = await fetch(url, {
         method,
-        headers: hasBody ? { "Content-Type": "application/json" } : undefined,
+        headers: Object.keys(finalHeaders).length ? finalHeaders : undefined,
         body: parsedBody,
       });
       setStatus(res.status);
