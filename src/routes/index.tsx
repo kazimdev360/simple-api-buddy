@@ -552,45 +552,85 @@ function Index() {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <History className="h-4 w-4 text-primary" /> History
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">
+                  {history.length}
+                </Badge>
               </CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => { setHistory([]); toast.success("History cleared"); }}
+                onClick={() => { setHistory([]); setHistoryQuery(""); toast.success("History cleared"); }}
                 className="transition-smooth hover:text-destructive"
               >
                 <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Clear
               </Button>
             </CardHeader>
-            <CardContent className="p-0">
-              <ul className="divide-y divide-border/60">
-                {history.map((h) => (
-                  <li key={h.id}>
-                    <button
-                      onClick={() => { setMethod(h.method); setUrl(h.url); }}
-                      className="flex w-full items-center gap-3 px-6 py-2.5 text-left text-sm transition-smooth hover:bg-muted/50"
-                    >
-                      <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold border ${METHOD_STYLES[h.method]}`}>
-                        {h.method}
-                      </span>
-                      <span className="flex-1 truncate font-mono text-xs">{h.url}</span>
-                      {h.status !== null && (
-                        <span
-                          className={`shrink-0 text-xs font-semibold ${
-                            h.status >= 200 && h.status < 300
-                              ? "text-success"
-                              : h.status >= 400
-                              ? "text-destructive"
-                              : "text-warning"
-                          }`}
+            <CardContent className="space-y-3 p-0 pb-2">
+              <div className="relative px-6">
+                <Search className="pointer-events-none absolute left-9 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={historyQuery}
+                  onChange={(e) => setHistoryQuery(e.target.value)}
+                  placeholder="Filter by URL or method..."
+                  className="h-9 pl-8 pr-9 text-sm"
+                />
+                {historyQuery && (
+                  <button
+                    onClick={() => setHistoryQuery("")}
+                    className="absolute right-9 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground transition-smooth hover:text-foreground"
+                    aria-label="Clear filter"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              {(() => {
+                const q = historyQuery.trim().toLowerCase();
+                const filtered = q
+                  ? history.filter(
+                      (h) =>
+                        h.url.toLowerCase().includes(q) ||
+                        h.method.toLowerCase().includes(q)
+                    )
+                  : history;
+                if (filtered.length === 0) {
+                  return (
+                    <p className="px-6 py-6 text-center text-sm text-muted-foreground">
+                      No requests match "{historyQuery}"
+                    </p>
+                  );
+                }
+                return (
+                  <ul className="divide-y divide-border/60 border-t border-border/60">
+                    {filtered.map((h) => (
+                      <li key={h.id}>
+                        <button
+                          onClick={() => { setMethod(h.method); setUrl(h.url); }}
+                          className="flex w-full items-center gap-3 px-6 py-2.5 text-left text-sm transition-smooth hover:bg-muted/50"
                         >
-                          {h.status}
-                        </span>
-                      )}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+                          <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold border ${METHOD_STYLES[h.method]}`}>
+                            {h.method}
+                          </span>
+                          <span className="flex-1 truncate font-mono text-xs">{h.url}</span>
+                          {h.status !== null && (
+                            <span
+                              className={`shrink-0 text-xs font-semibold ${
+                                h.status >= 200 && h.status < 300
+                                  ? "text-success"
+                                  : h.status >= 400
+                                  ? "text-destructive"
+                                  : "text-warning"
+                              }`}
+                            >
+                              {h.status}
+                            </span>
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              })()}
             </CardContent>
           </Card>
         )}
