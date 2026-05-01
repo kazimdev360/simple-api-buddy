@@ -16,7 +16,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
   Loader2, Moon, Sun, Send, Copy, Check, Plus, X, Zap,
-  History, Trash2, Clock, FileJson, Sparkles,
+  History, Trash2, Clock, FileJson, Sparkles, Search,
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
