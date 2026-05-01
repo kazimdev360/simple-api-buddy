@@ -93,6 +93,7 @@ function Index() {
   const [copied, setCopied] = useState(false);
   const [dark, setDark] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [historyQuery, setHistoryQuery] = useState("");
   const [activeTab, setActiveTab] = useState("body");
   const responseRef = useRef<HTMLDivElement>(null);
 
