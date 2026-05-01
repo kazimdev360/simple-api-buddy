@@ -205,6 +205,61 @@ function Index() {
               </div>
             </div>
 
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <Label className="text-sm">Headers</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setHeaders((h) => [...h, newHeader()])}
+                >
+                  <Plus className="mr-1 h-3.5 w-3.5" />
+                  Add header
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {headers.map((h, i) => (
+                  <div key={h.id} className="flex gap-2">
+                    <Input
+                      placeholder="Header name (e.g. Authorization)"
+                      value={h.key}
+                      onChange={(e) =>
+                        setHeaders((arr) =>
+                          arr.map((x, j) => (j === i ? { ...x, key: e.target.value } : x))
+                        )
+                      }
+                      className="flex-1 font-mono text-sm"
+                    />
+                    <Input
+                      placeholder="Value (e.g. Bearer ...)"
+                      value={h.value}
+                      onChange={(e) =>
+                        setHeaders((arr) =>
+                          arr.map((x, j) => (j === i ? { ...x, value: e.target.value } : x))
+                        )
+                      }
+                      className="flex-1 font-mono text-sm"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        setHeaders((arr) => {
+                          const next = arr.filter((_, j) => j !== i);
+                          return next.length ? next : [newHeader()];
+                        })
+                      }
+                      aria-label="Remove header"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {hasBody && (
               <div>
                 <Label htmlFor="body" className="mb-2 block text-sm">
