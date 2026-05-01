@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Moon, Sun, Send, Copy, Check } from "lucide-react";
+import { Loader2, Moon, Sun, Send, Copy, Check, Plus, X } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
 export const Route = createFileRoute("/")({
@@ -20,11 +20,19 @@ export const Route = createFileRoute("/")({
 });
 
 type Method = "GET" | "POST" | "PUT" | "DELETE";
+type Header = { id: string; key: string; value: string };
+
+const newHeader = (): Header => ({
+  id: Math.random().toString(36).slice(2),
+  key: "",
+  value: "",
+});
 
 function Index() {
   const [url, setUrl] = useState("https://jsonplaceholder.typicode.com/todos/1");
   const [method, setMethod] = useState<Method>("GET");
   const [body, setBody] = useState("");
+  const [headers, setHeaders] = useState<Header[]>([newHeader()]);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<number | null>(null);
   const [statusText, setStatusText] = useState("");
@@ -82,11 +90,27 @@ function Index() {
       }
     }
 
+    const finalHeaders: Record<string, string> = {};
+    for (const h of headers) {
+      const k = h.key.trim();
+      const v = h.value.trim();
+      if (!k) continue;
+      if (!/^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$/.test(k)) {
+        setError(`Invalid header name: "${k}"`);
+        toast.error("Invalid header name");
+        return;
+      }
+      finalHeaders[k] = v;
+    }
+    if (parsedBody && !Object.keys(finalHeaders).some((k) => k.toLowerCase() === "content-type")) {
+      finalHeaders["Content-Type"] = "application/json";
+    }
+
     setLoading(true);
     try {
       const res = await fetch(url, {
         method,
-        headers: hasBody ? { "Content-Type": "application/json" } : undefined,
+        headers: Object.keys(finalHeaders).length ? finalHeaders : undefined,
         body: parsedBody,
       });
       setStatus(res.status);
@@ -178,6 +202,61 @@ function Index() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                 />
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <Label className="text-sm">Headers</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setHeaders((h) => [...h, newHeader()])}
+                >
+                  <Plus className="mr-1 h-3.5 w-3.5" />
+                  Add header
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {headers.map((h, i) => (
+                  <div key={h.id} className="flex gap-2">
+                    <Input
+                      placeholder="Header name (e.g. Authorization)"
+                      value={h.key}
+                      onChange={(e) =>
+                        setHeaders((arr) =>
+                          arr.map((x, j) => (j === i ? { ...x, key: e.target.value } : x))
+                        )
+                      }
+                      className="flex-1 font-mono text-sm"
+                    />
+                    <Input
+                      placeholder="Value (e.g. Bearer ...)"
+                      value={h.value}
+                      onChange={(e) =>
+                        setHeaders((arr) =>
+                          arr.map((x, j) => (j === i ? { ...x, value: e.target.value } : x))
+                        )
+                      }
+                      className="flex-1 font-mono text-sm"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        setHeaders((arr) => {
+                          const next = arr.filter((_, j) => j !== i);
+                          return next.length ? next : [newHeader()];
+                        })
+                      }
+                      aria-label="Remove header"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             </div>
 
