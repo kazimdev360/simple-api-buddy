@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Moon, Sun, Send, Copy, Check } from "lucide-react";
+import { Loader2, Moon, Sun, Send, Copy, Check, Plus, X } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
 export const Route = createFileRoute("/")({
@@ -20,11 +20,19 @@ export const Route = createFileRoute("/")({
 });
 
 type Method = "GET" | "POST" | "PUT" | "DELETE";
+type Header = { id: string; key: string; value: string };
+
+const newHeader = (): Header => ({
+  id: Math.random().toString(36).slice(2),
+  key: "",
+  value: "",
+});
 
 function Index() {
   const [url, setUrl] = useState("https://jsonplaceholder.typicode.com/todos/1");
   const [method, setMethod] = useState<Method>("GET");
   const [body, setBody] = useState("");
+  const [headers, setHeaders] = useState<Header[]>([newHeader()]);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<number | null>(null);
   const [statusText, setStatusText] = useState("");
