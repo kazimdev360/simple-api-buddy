@@ -356,8 +356,17 @@ function Index() {
         </div>
 
         <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:py-10">
-        <header className="mb-8 flex items-center justify-between animate-fade-in">
+        <header className="mb-8 flex items-center justify-between gap-3 animate-fade-in">
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setMobileSidebarOpen(true)}
+              aria-label="Open collections"
+              className="rounded-full lg:hidden"
+            >
+              <PanelLeftOpen className="h-4 w-4" />
+            </Button>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
               <Zap className="h-5 w-5 text-primary-foreground" />
             </div>
@@ -370,15 +379,28 @@ function Index() {
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={toggleTheme}
-            aria-label="Toggle theme"
-            className="rounded-full transition-smooth hover-scale"
-          >
-            {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (!url) { toast.error("Enter a URL first"); return; }
+                setSaveOpen(true);
+              }}
+              className="transition-smooth hover-scale"
+            >
+              <Save className="mr-1.5 h-4 w-4" /> Save
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              className="rounded-full transition-smooth hover-scale"
+            >
+              {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+          </div>
         </header>
 
         {/* Sample endpoints */}
