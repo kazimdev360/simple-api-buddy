@@ -309,9 +309,6 @@ export function SaveRequestDialog({
   const [collectionId, setCollectionId] = useState<string>("");
   const [newName, setNewName] = useState("");
 
-  // sync default name when opening
-  useState(() => setName(defaultName));
-
   const handleSave = () => {
     let cid = collectionId;
     if (cid === "__new__") {
