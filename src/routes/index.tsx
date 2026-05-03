@@ -103,6 +103,9 @@ function Index() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyQuery, setHistoryQuery] = useState("");
   const [activeTab, setActiveTab] = useState("body");
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const responseRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
