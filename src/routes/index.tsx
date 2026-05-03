@@ -281,6 +281,42 @@ function Index() {
     }
   }, [response]);
 
+  const loadSavedRequest = (r: SavedRequest) => {
+    setMethod(r.method);
+    setUrl(r.url);
+    setBody(r.body);
+    setHeaders(r.headers.length ? r.headers : [newHeader()]);
+    setMobileSidebarOpen(false);
+    toast.success(`Loaded "${r.name}"`);
+  };
+
+  const createCollection = (name: string): string => {
+    const id = Math.random().toString(36).slice(2);
+    setCollections((cs) => [...cs, { id, name, requests: [] }]);
+    return id;
+  };
+
+  const handleSaveRequest = (collectionId: string, name: string) => {
+    const req: SavedRequest = {
+      id: Math.random().toString(36).slice(2),
+      name,
+      method,
+      url,
+      body,
+      headers,
+    };
+    setCollections((cs) => {
+      const exists = cs.some((c) => c.id === collectionId);
+      if (!exists) {
+        return [...cs, { id: collectionId, name: "My collection", requests: [req] }];
+      }
+      return cs.map((c) =>
+        c.id === collectionId ? { ...c, requests: [...c.requests, req] } : c,
+      );
+    });
+    toast.success(`Saved "${name}"`);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-subtle text-foreground">
       <Toaster richColors position="top-center" />
