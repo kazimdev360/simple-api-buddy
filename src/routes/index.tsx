@@ -17,8 +17,16 @@ import { Badge } from "@/components/ui/badge";
 import {
   Loader2, Moon, Sun, Send, Copy, Check, Plus, X, Zap,
   History, Trash2, Clock, FileJson, Sparkles, Search,
+  Save, PanelLeftOpen,
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
+import {
+  CollectionsSidebar,
+  SaveRequestDialog,
+  type Collection,
+  type SavedRequest,
+} from "@/components/CollectionsSidebar";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/")({
   component: Index,
