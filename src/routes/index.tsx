@@ -724,6 +724,7 @@ function Index() {
         <footer className="mt-10 text-center text-xs text-muted-foreground">
           Built for fast API exploration · ⌘/Ctrl + Enter to send
         </footer>
+        </div>
       </div>
     </div>
   );
