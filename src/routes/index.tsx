@@ -17,8 +17,16 @@ import { Badge } from "@/components/ui/badge";
 import {
   Loader2, Moon, Sun, Send, Copy, Check, Plus, X, Zap,
   History, Trash2, Clock, FileJson, Sparkles, Search,
+  Save, PanelLeftOpen,
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
+import {
+  CollectionsSidebar,
+  SaveRequestDialog,
+  type Collection,
+  type SavedRequest,
+} from "@/components/CollectionsSidebar";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -95,6 +103,9 @@ function Index() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyQuery, setHistoryQuery] = useState("");
   const [activeTab, setActiveTab] = useState("body");
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const responseRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -107,7 +118,15 @@ function Index() {
       const h = JSON.parse(localStorage.getItem("api-history") || "[]");
       if (Array.isArray(h)) setHistory(h);
     } catch {}
+    try {
+      const c = JSON.parse(localStorage.getItem("api-collections") || "[]");
+      if (Array.isArray(c)) setCollections(c);
+    } catch {}
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("api-collections", JSON.stringify(collections));
+  }, [collections]);
 
   useEffect(() => {
     localStorage.setItem("api-history", JSON.stringify(history.slice(0, 20)));
@@ -262,6 +281,42 @@ function Index() {
     }
   }, [response]);
 
+  const loadSavedRequest = (r: SavedRequest) => {
+    setMethod(r.method);
+    setUrl(r.url);
+    setBody(r.body);
+    setHeaders(r.headers.length ? r.headers : [newHeader()]);
+    setMobileSidebarOpen(false);
+    toast.success(`Loaded "${r.name}"`);
+  };
+
+  const createCollection = (name: string): string => {
+    const id = Math.random().toString(36).slice(2);
+    setCollections((cs) => [...cs, { id, name, requests: [] }]);
+    return id;
+  };
+
+  const handleSaveRequest = (collectionId: string, name: string) => {
+    const req: SavedRequest = {
+      id: Math.random().toString(36).slice(2),
+      name,
+      method,
+      url,
+      body,
+      headers,
+    };
+    setCollections((cs) => {
+      const exists = cs.some((c) => c.id === collectionId);
+      if (!exists) {
+        return [...cs, { id: collectionId, name: "My collection", requests: [req] }];
+      }
+      return cs.map((c) =>
+        c.id === collectionId ? { ...c, requests: [...c.requests, req] } : c,
+      );
+    });
+    toast.success(`Saved "${name}"`);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-subtle text-foreground">
       <Toaster richColors position="top-center" />
@@ -269,9 +324,49 @@ function Index() {
       {/* Decorative glow */}
       <div className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[400px] bg-gradient-primary opacity-[0.08] blur-3xl" />
 
-      <div className="mx-auto max-w-4xl px-4 py-6 sm:py-10">
-        <header className="mb-8 flex items-center justify-between animate-fade-in">
+      <SaveRequestDialog
+        open={saveOpen}
+        onOpenChange={setSaveOpen}
+        collections={collections}
+        onCreateCollection={createCollection}
+        onSave={handleSaveRequest}
+        defaultName={(() => { try { return new URL(url).pathname.split("/").filter(Boolean).pop() || method; } catch { return method; } })()}
+      />
+
+      <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+        <SheetContent side="left" className="w-[300px] p-0 sm:max-w-[300px]">
+          <CollectionsSidebar
+            collections={collections}
+            setCollections={setCollections}
+            onLoadRequest={loadSavedRequest}
+            onClose={() => setMobileSidebarOpen(false)}
+          />
+        </SheetContent>
+      </Sheet>
+
+      <div className="flex min-h-screen">
+        <div className="hidden w-72 shrink-0 border-r border-border/60 lg:block">
+          <div className="sticky top-0 h-screen">
+            <CollectionsSidebar
+              collections={collections}
+              setCollections={setCollections}
+              onLoadRequest={loadSavedRequest}
+            />
+          </div>
+        </div>
+
+        <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:py-10">
+        <header className="mb-8 flex items-center justify-between gap-3 animate-fade-in">
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setMobileSidebarOpen(true)}
+              aria-label="Open collections"
+              className="rounded-full lg:hidden"
+            >
+              <PanelLeftOpen className="h-4 w-4" />
+            </Button>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
               <Zap className="h-5 w-5 text-primary-foreground" />
             </div>
@@ -284,15 +379,28 @@ function Index() {
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={toggleTheme}
-            aria-label="Toggle theme"
-            className="rounded-full transition-smooth hover-scale"
-          >
-            {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (!url) { toast.error("Enter a URL first"); return; }
+                setSaveOpen(true);
+              }}
+              className="transition-smooth hover-scale"
+            >
+              <Save className="mr-1.5 h-4 w-4" /> Save
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              className="rounded-full transition-smooth hover-scale"
+            >
+              {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+          </div>
         </header>
 
         {/* Sample endpoints */}
@@ -638,6 +746,7 @@ function Index() {
         <footer className="mt-10 text-center text-xs text-muted-foreground">
           Built for fast API exploration · ⌘/Ctrl + Enter to send
         </footer>
+        </div>
       </div>
     </div>
   );
