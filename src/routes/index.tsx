@@ -118,7 +118,15 @@ function Index() {
       const h = JSON.parse(localStorage.getItem("api-history") || "[]");
       if (Array.isArray(h)) setHistory(h);
     } catch {}
+    try {
+      const c = JSON.parse(localStorage.getItem("api-collections") || "[]");
+      if (Array.isArray(c)) setCollections(c);
+    } catch {}
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("api-collections", JSON.stringify(collections));
+  }, [collections]);
 
   useEffect(() => {
     localStorage.setItem("api-history", JSON.stringify(history.slice(0, 20)));
