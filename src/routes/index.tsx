@@ -324,7 +324,38 @@ function Index() {
       {/* Decorative glow */}
       <div className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[400px] bg-gradient-primary opacity-[0.08] blur-3xl" />
 
-      <div className="mx-auto max-w-4xl px-4 py-6 sm:py-10">
+      <SaveRequestDialog
+        open={saveOpen}
+        onOpenChange={setSaveOpen}
+        collections={collections}
+        onCreateCollection={createCollection}
+        onSave={handleSaveRequest}
+        defaultName={(() => { try { return new URL(url).pathname.split("/").filter(Boolean).pop() || method; } catch { return method; } })()}
+      />
+
+      <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+        <SheetContent side="left" className="w-[300px] p-0 sm:max-w-[300px]">
+          <CollectionsSidebar
+            collections={collections}
+            setCollections={setCollections}
+            onLoadRequest={loadSavedRequest}
+            onClose={() => setMobileSidebarOpen(false)}
+          />
+        </SheetContent>
+      </Sheet>
+
+      <div className="flex min-h-screen">
+        <div className="hidden w-72 shrink-0 border-r border-border/60 lg:block">
+          <div className="sticky top-0 h-screen">
+            <CollectionsSidebar
+              collections={collections}
+              setCollections={setCollections}
+              onLoadRequest={loadSavedRequest}
+            />
+          </div>
+        </div>
+
+        <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:py-10">
         <header className="mb-8 flex items-center justify-between animate-fade-in">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
