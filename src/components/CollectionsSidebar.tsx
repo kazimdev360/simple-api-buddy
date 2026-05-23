@@ -81,6 +81,7 @@ export function CollectionsSidebar({
   const [importOpen, setImportOpen] = useState(false);
   const [importMode, setImportMode] = useState<"merge" | "replace">("merge");
   const [pendingImport, setPendingImport] = useState<Collection[] | null>(null);
+  const [editing, setEditing] = useState<{ cid: string; req: SavedRequest } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const addCollection = () => {
