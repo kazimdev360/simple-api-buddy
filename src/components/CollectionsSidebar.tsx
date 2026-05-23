@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,6 +30,9 @@ import {
   Search,
   PanelLeftClose,
   Inbox,
+  Download,
+  Upload,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -73,6 +76,10 @@ export function CollectionsSidebar({
   const [openIds, setOpenIds] = useState<Record<string, boolean>>({});
   const [newColOpen, setNewColOpen] = useState(false);
   const [newColName, setNewColName] = useState("");
+  const [importOpen, setImportOpen] = useState(false);
+  const [importMode, setImportMode] = useState<"merge" | "replace">("merge");
+  const [pendingImport, setPendingImport] = useState<Collection[] | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const addCollection = () => {
     const name = newColName.trim();
@@ -96,6 +103,93 @@ export function CollectionsSidebar({
         c.id === cid ? { ...c, requests: c.requests.filter((r) => r.id !== rid) } : c,
       ),
     );
+  };
+
+  const exportCollections = () => {
+    const data = JSON.stringify(collections, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `api-collections-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Collections exported");
+  };
+
+  const isValidCollection = (c: unknown): c is Collection => {
+    if (!c || typeof c !== "object") return false;
+    const col = c as Record<string, unknown>;
+    if (typeof col.id !== "string" || typeof col.name !== "string") return false;
+    if (!Array.isArray(col.requests)) return false;
+    return col.requests.every((r) => {
+      if (!r || typeof r !== "object") return false;
+      const req = r as Record<string, unknown>;
+      return (
+        typeof req.id === "string" &&
+        typeof req.name === "string" &&
+        typeof req.url === "string" &&
+        typeof req.body === "string" &&
+        ["GET", "POST", "PUT", "DELETE"].includes(req.method as string) &&
+        Array.isArray(req.headers) &&
+        req.headers.every((h) => h && typeof (h as Record<string, unknown>).id === "string")
+      );
+    });
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        const arr = Array.isArray(parsed) ? parsed : [parsed];
+        const valid = arr.filter(isValidCollection);
+        if (valid.length === 0) {
+          toast.error("No valid collections found in file");
+          return;
+        }
+        setPendingImport(valid);
+        setImportMode("merge");
+        setImportOpen(true);
+      } catch {
+        toast.error("Invalid JSON file");
+      } finally {
+        if (fileRef.current) fileRef.current.value = "";
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const confirmImport = () => {
+    if (!pendingImport) return;
+    if (importMode === "replace") {
+      setCollections(pendingImport);
+      toast.success(`Replaced with ${pendingImport.length} collection(s)`);
+    } else {
+      const existingIds = new Set(collections.map((c) => c.id));
+      const merged: Collection[] = collections.map((c) => ({ ...c, requests: [...c.requests] }));
+      for (const col of pendingImport) {
+        if (existingIds.has(col.id)) {
+          const target = merged.find((c) => c.id === col.id);
+          if (target) {
+            const reqIds = new Set(target.requests.map((r) => r.id));
+            col.requests.forEach((r) => {
+              if (!reqIds.has(r.id)) target.requests.push(r);
+            });
+          }
+        } else {
+          merged.push(col);
+        }
+      }
+      setCollections(merged);
+      toast.success(`Imported ${pendingImport.length} collection(s)`);
+    }
+    setPendingImport(null);
+    setImportOpen(false);
   };
 
   const q = query.trim().toLowerCase();
@@ -258,6 +352,35 @@ export function CollectionsSidebar({
         )}
       </div>
 
+      <div className="border-t border-border/60 p-2">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 flex-1 text-xs"
+            onClick={exportCollections}
+            disabled={collections.length === 0}
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" /> Export
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 flex-1 text-xs"
+            onClick={() => fileRef.current?.click()}
+          >
+            <Upload className="mr-1.5 h-3.5 w-3.5" /> Import
+          </Button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+        </div>
+      </div>
+
       <Dialog open={newColOpen} onOpenChange={setNewColOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
@@ -281,6 +404,58 @@ export function CollectionsSidebar({
               Cancel
             </Button>
             <Button onClick={addCollection}>Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+              Import collections
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Found <strong className="text-foreground">{pendingImport?.length ?? 0}</strong> valid collection(s). How would you like to import them?
+            </p>
+            <div className="flex flex-col gap-2">
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/60 bg-muted/40 p-3 transition hover:bg-muted/60">
+                <input
+                  type="radio"
+                  name="import-mode"
+                  value="merge"
+                  checked={importMode === "merge"}
+                  onChange={() => setImportMode("merge")}
+                  className="mt-0.5"
+                />
+                <div>
+                  <p className="text-sm font-medium">Merge</p>
+                  <p className="text-xs text-muted-foreground">Add to existing collections, merging matching folders</p>
+                </div>
+              </label>
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/60 bg-muted/40 p-3 transition hover:bg-muted/60">
+                <input
+                  type="radio"
+                  name="import-mode"
+                  value="replace"
+                  checked={importMode === "replace"}
+                  onChange={() => setImportMode("replace")}
+                  className="mt-0.5"
+                />
+                <div>
+                  <p className="text-sm font-medium">Replace all</p>
+                  <p className="text-xs text-muted-foreground">Overwrite your current collections entirely</p>
+                </div>
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmImport}>Import</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
