@@ -348,6 +348,14 @@ export function CollectionsSidebar({
                               <span className="flex-1 truncate">{r.name}</span>
                             </button>
                             <button
+                              onClick={() => setEditing({ cid: c.id, req: r })}
+                              className="rounded p-1 text-muted-foreground opacity-0 transition hover:text-primary group-hover/req:opacity-100"
+                              aria-label="Edit request"
+                              title="Edit request"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </button>
+                            <button
                               onClick={() => deleteRequest(c.id, r.id)}
                               className="rounded p-1 text-muted-foreground opacity-0 transition hover:text-destructive group-hover/req:opacity-100"
                               aria-label="Delete request"
