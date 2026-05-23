@@ -481,6 +481,18 @@ export function CollectionsSidebar({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EditRequestDialog
+        open={!!editing}
+        onOpenChange={(o) => {
+          if (!o) setEditing(null);
+        }}
+        initial={editing?.req ?? null}
+        onSave={(updated) => {
+          if (editing) updateRequest(editing.cid, updated);
+          setEditing(null);
+        }}
+      />
     </aside>
   );
 }
