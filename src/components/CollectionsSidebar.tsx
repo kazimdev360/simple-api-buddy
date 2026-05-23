@@ -352,6 +352,35 @@ export function CollectionsSidebar({
         )}
       </div>
 
+      <div className="border-t border-border/60 p-2">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 flex-1 text-xs"
+            onClick={exportCollections}
+            disabled={collections.length === 0}
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" /> Export
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 flex-1 text-xs"
+            onClick={() => fileRef.current?.click()}
+          >
+            <Upload className="mr-1.5 h-3.5 w-3.5" /> Import
+          </Button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+        </div>
+      </div>
+
       <Dialog open={newColOpen} onOpenChange={setNewColOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
@@ -375,6 +404,58 @@ export function CollectionsSidebar({
               Cancel
             </Button>
             <Button onClick={addCollection}>Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+              Import collections
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Found <strong className="text-foreground">{pendingImport?.length ?? 0}</strong> valid collection(s). How would you like to import them?
+            </p>
+            <div className="flex flex-col gap-2">
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/60 bg-muted/40 p-3 transition hover:bg-muted/60">
+                <input
+                  type="radio"
+                  name="import-mode"
+                  value="merge"
+                  checked={importMode === "merge"}
+                  onChange={() => setImportMode("merge")}
+                  className="mt-0.5"
+                />
+                <div>
+                  <p className="text-sm font-medium">Merge</p>
+                  <p className="text-xs text-muted-foreground">Add to existing collections, merging matching folders</p>
+                </div>
+              </label>
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/60 bg-muted/40 p-3 transition hover:bg-muted/60">
+                <input
+                  type="radio"
+                  name="import-mode"
+                  value="replace"
+                  checked={importMode === "replace"}
+                  onChange={() => setImportMode("replace")}
+                  className="mt-0.5"
+                />
+                <div>
+                  <p className="text-sm font-medium">Replace all</p>
+                  <p className="text-xs text-muted-foreground">Overwrite your current collections entirely</p>
+                </div>
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmImport}>Import</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
