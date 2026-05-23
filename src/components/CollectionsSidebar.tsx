@@ -170,26 +170,22 @@ export function CollectionsSidebar({
       setCollections(pendingImport);
       toast.success(`Replaced with ${pendingImport.length} collection(s)`);
     } else {
-      setCollections((prev) => {
-        const existingIds = new Set(prev.map((c) => c.id));
-        const merged = [...prev];
-        for (const col of pendingImport) {
-          if (existingIds.has(col.id)) {
-            // Merge requests into existing collection
-            merged.forEach((c) => {
-              if (c.id === col.id) {
-                const reqIds = new Set(c.requests.map((r) => r.id));
-                col.requests.forEach((r) => {
-                  if (!reqIds.has(r.id)) c.requests.push(r);
-                });
-              }
+      const existingIds = new Set(collections.map((c) => c.id));
+      const merged: Collection[] = collections.map((c) => ({ ...c, requests: [...c.requests] }));
+      for (const col of pendingImport) {
+        if (existingIds.has(col.id)) {
+          const target = merged.find((c) => c.id === col.id);
+          if (target) {
+            const reqIds = new Set(target.requests.map((r) => r.id));
+            col.requests.forEach((r) => {
+              if (!reqIds.has(r.id)) target.requests.push(r);
             });
-          } else {
-            merged.push(col);
           }
+        } else {
+          merged.push(col);
         }
-        return merged;
-      });
+      }
+      setCollections(merged);
       toast.success(`Imported ${pendingImport.length} collection(s)`);
     }
     setPendingImport(null);
