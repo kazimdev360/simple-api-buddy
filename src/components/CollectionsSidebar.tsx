@@ -33,6 +33,8 @@ import {
   Download,
   Upload,
   AlertTriangle,
+  Pencil,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 
