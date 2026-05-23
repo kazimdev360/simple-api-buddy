@@ -607,7 +607,6 @@ type EditDialogProps = {
   onSave: (updated: SavedRequest) => void;
 };
 
-import { Textarea } from "@/components/ui/textarea";
 
 function EditRequestDialog({ open, onOpenChange, initial, onSave }: EditDialogProps) {
   const [name, setName] = useState("");
