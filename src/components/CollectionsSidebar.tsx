@@ -108,6 +108,17 @@ export function CollectionsSidebar({
     );
   };
 
+  const updateRequest = (cid: string, updated: SavedRequest) => {
+    setCollections(
+      collections.map((c) =>
+        c.id === cid
+          ? { ...c, requests: c.requests.map((r) => (r.id === updated.id ? updated : r)) }
+          : c,
+      ),
+    );
+    toast.success("Request updated");
+  };
+
   const exportCollections = () => {
     const data = JSON.stringify(collections, null, 2);
     const blob = new Blob([data], { type: "application/json" });
