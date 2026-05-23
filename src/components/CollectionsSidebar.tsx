@@ -105,6 +105,97 @@ export function CollectionsSidebar({
     );
   };
 
+  const exportCollections = () => {
+    const data = JSON.stringify(collections, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `api-collections-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Collections exported");
+  };
+
+  const isValidCollection = (c: unknown): c is Collection => {
+    if (!c || typeof c !== "object") return false;
+    const col = c as Record<string, unknown>;
+    if (typeof col.id !== "string" || typeof col.name !== "string") return false;
+    if (!Array.isArray(col.requests)) return false;
+    return col.requests.every((r) => {
+      if (!r || typeof r !== "object") return false;
+      const req = r as Record<string, unknown>;
+      return (
+        typeof req.id === "string" &&
+        typeof req.name === "string" &&
+        typeof req.url === "string" &&
+        typeof req.body === "string" &&
+        ["GET", "POST", "PUT", "DELETE"].includes(req.method as string) &&
+        Array.isArray(req.headers) &&
+        req.headers.every((h) => h && typeof (h as Record<string, unknown>).id === "string")
+      );
+    });
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        const arr = Array.isArray(parsed) ? parsed : [parsed];
+        const valid = arr.filter(isValidCollection);
+        if (valid.length === 0) {
+          toast.error("No valid collections found in file");
+          return;
+        }
+        setPendingImport(valid);
+        setImportMode("merge");
+        setImportOpen(true);
+      } catch {
+        toast.error("Invalid JSON file");
+      } finally {
+        if (fileRef.current) fileRef.current.value = "";
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const confirmImport = () => {
+    if (!pendingImport) return;
+    if (importMode === "replace") {
+      setCollections(pendingImport);
+      toast.success(`Replaced with ${pendingImport.length} collection(s)`);
+    } else {
+      setCollections((prev) => {
+        const existingIds = new Set(prev.map((c) => c.id));
+        const merged = [...prev];
+        for (const col of pendingImport) {
+          if (existingIds.has(col.id)) {
+            // Merge requests into existing collection
+            merged.forEach((c) => {
+              if (c.id === col.id) {
+                const reqIds = new Set(c.requests.map((r) => r.id));
+                col.requests.forEach((r) => {
+                  if (!reqIds.has(r.id)) c.requests.push(r);
+                });
+              }
+            });
+          } else {
+            merged.push(col);
+          }
+        }
+        return merged;
+      });
+      toast.success(`Imported ${pendingImport.length} collection(s)`);
+    }
+    setPendingImport(null);
+    setImportOpen(false);
+  };
+
   const q = query.trim().toLowerCase();
   const filtered = q
     ? collections
