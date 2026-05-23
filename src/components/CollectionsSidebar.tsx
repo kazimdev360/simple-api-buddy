@@ -76,6 +76,10 @@ export function CollectionsSidebar({
   const [openIds, setOpenIds] = useState<Record<string, boolean>>({});
   const [newColOpen, setNewColOpen] = useState(false);
   const [newColName, setNewColName] = useState("");
+  const [importOpen, setImportOpen] = useState(false);
+  const [importMode, setImportMode] = useState<"merge" | "replace">("merge");
+  const [pendingImport, setPendingImport] = useState<Collection[] | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const addCollection = () => {
     const name = newColName.trim();
