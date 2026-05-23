@@ -598,3 +598,161 @@ export function SaveRequestDialog({
     </Dialog>
   );
 }
+
+type EditDialogProps = {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  initial: SavedRequest | null;
+  onSave: (updated: SavedRequest) => void;
+};
+
+import { Textarea } from "@/components/ui/textarea";
+
+function EditRequestDialog({ open, onOpenChange, initial, onSave }: EditDialogProps) {
+  const [name, setName] = useState("");
+  const [method, setMethod] = useState<Method>("GET");
+  const [url, setUrl] = useState("");
+  const [body, setBody] = useState("");
+  const [headers, setHeaders] = useState<SavedHeader[]>([]);
+
+  // Reset state when dialog opens with a new request
+  const [loadedId, setLoadedId] = useState<string | null>(null);
+  if (open && initial && initial.id !== loadedId) {
+    setLoadedId(initial.id);
+    setName(initial.name);
+    setMethod(initial.method);
+    setUrl(initial.url);
+    setBody(initial.body);
+    setHeaders(initial.headers.map((h) => ({ ...h })));
+  }
+  if (!open && loadedId !== null) {
+    setLoadedId(null);
+  }
+
+  const updateHeader = (id: string, patch: Partial<SavedHeader>) => {
+    setHeaders((hs) => hs.map((h) => (h.id === id ? { ...h, ...patch } : h)));
+  };
+  const addHeader = () => {
+    setHeaders((hs) => [...hs, { id: Math.random().toString(36).slice(2), key: "", value: "" }]);
+  };
+  const removeHeader = (id: string) => {
+    setHeaders((hs) => hs.filter((h) => h.id !== id));
+  };
+
+  const showBody = method === "POST" || method === "PUT";
+
+  const handleSave = () => {
+    if (!initial) return;
+    if (!url.trim()) {
+      toast.error("URL is required");
+      return;
+    }
+    onSave({
+      ...initial,
+      name: name.trim() || initial.name,
+      method,
+      url: url.trim(),
+      body,
+      headers: headers.filter((h) => h.key.trim() !== ""),
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit request</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-name">Name</Label>
+            <Input id="edit-name" value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="grid grid-cols-[110px_1fr] gap-2">
+            <div className="space-y-1.5">
+              <Label>Method</Label>
+              <Select value={method} onValueChange={(v) => setMethod(v as Method)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(["GET", "POST", "PUT", "DELETE"] as Method[]).map((m) => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-url">URL</Label>
+              <Input
+                id="edit-url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://api.example.com/..."
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label>Headers</Label>
+              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={addHeader}>
+                <Plus className="mr-1 h-3.5 w-3.5" /> Add
+              </Button>
+            </div>
+            {headers.length === 0 ? (
+              <p className="rounded-md border border-dashed border-border/60 px-3 py-2 text-xs text-muted-foreground">
+                No headers
+              </p>
+            ) : (
+              <div className="space-y-1.5">
+                {headers.map((h) => (
+                  <div key={h.id} className="flex items-center gap-1.5">
+                    <Input
+                      value={h.key}
+                      onChange={(e) => updateHeader(h.id, { key: e.target.value })}
+                      placeholder="Key"
+                      className="h-8 text-xs"
+                    />
+                    <Input
+                      value={h.value}
+                      onChange={(e) => updateHeader(h.id, { value: e.target.value })}
+                      placeholder="Value"
+                      className="h-8 text-xs"
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 shrink-0"
+                      onClick={() => removeHeader(h.id)}
+                      aria-label="Remove header"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {showBody && (
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-body">Body</Label>
+              <Textarea
+                id="edit-body"
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder='{ "key": "value" }'
+                className="min-h-[120px] font-mono text-xs"
+              />
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={handleSave}>Save changes</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
